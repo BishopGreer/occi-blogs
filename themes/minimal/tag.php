@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Posts tagged "<?= h($tag['name']) ?>" &mdash; <?= h($blog['name']) ?></title>
 <link rel="stylesheet" href="<?= h(themeAsset($blog, 'css/style.css')) ?>">
+<?php if ($blog['custom_css']): ?><style><?= $blog['custom_css'] ?></style><?php endif; ?>
 </head>
 <body>
 <header class="site-header">

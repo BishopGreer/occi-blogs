@@ -36,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $excerpt    = trim($_POST['excerpt'] ?? '');
     $cover      = trim($_POST['cover_image'] ?? '');
     $status     = in_array($_POST['status'] ?? '', ['draft','published','scheduled']) ? $_POST['status'] : 'draft';
+    $scheduledAt = trim($_POST['published_at'] ?? '');
     $tagsInput  = trim($_POST['tags'] ?? '');
 
     if (!$title)   $errors[] = 'Title is required.';
@@ -50,6 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($status === 'published') {
             $publishedAt = Database::fetch("SELECT published_at FROM posts WHERE id = ?", [$postId])['published_at'] ?? null;
             if (!$publishedAt) $publishedAt = date('Y-m-d H:i:s');
+        } elseif ($status === 'scheduled') {
+            $publishedAt = $scheduledAt ? date('Y-m-d H:i:s', strtotime($scheduledAt)) : date('Y-m-d H:i:s', strtotime('+1 hour'));
         }
 
         $data = compact('title', 'slug', 'content', 'excerpt', 'cover_image', 'status') + ['published_at' => $publishedAt, 'cover_image' => $cover];
@@ -82,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect("/admin/blogs/{$blogId}/posts/{$postId}/edit");
     }
 
-    $post = compact('title', 'slug', 'content', 'excerpt', 'status') + ['cover_image' => $cover];
+    $post = compact('title', 'slug', 'content', 'excerpt', 'status') + ['cover_image' => $cover, 'published_at' => $scheduledAt];
     $postTagNames = array_filter(array_map('trim', explode(',', $tagsInput)));
 }
 
@@ -126,10 +129,16 @@ adminLayout($pageTitle, function() use ($blog, $blogId, $post, $postId, $isNew, 
         <h3>Publish</h3>
         <div class="form-group">
           <label>Status</label>
-          <select name="status" id="post-status">
-            <option value="draft" <?= ($post['status'] ?? 'draft') === 'draft' ? 'selected' : '' ?>>Draft</option>
+          <select name="status" id="post-status" onchange="toggleScheduled(this.value)">
+            <option value="draft"     <?= ($post['status'] ?? 'draft') === 'draft'     ? 'selected' : '' ?>>Draft</option>
             <option value="published" <?= ($post['status'] ?? '') === 'published' ? 'selected' : '' ?>>Published</option>
+            <option value="scheduled" <?= ($post['status'] ?? '') === 'scheduled' ? 'selected' : '' ?>>Scheduled</option>
           </select>
+        </div>
+        <div class="form-group" id="scheduled-at-group" style="display:<?= ($post['status'] ?? '') === 'scheduled' ? 'block' : 'none' ?>">
+          <label>Publish Date &amp; Time</label>
+          <input type="datetime-local" name="published_at" id="published-at"
+                 value="<?= h(isset($post['published_at']) && $post['published_at'] ? date('Y-m-d\TH:i', strtotime($post['published_at'])) : '') ?>">
         </div>
         <div class="form-group">
           <label for="slug">URL Slug</label>
@@ -201,6 +210,15 @@ const editor = Jodit.make('#content', {
     lineHeight: '1.75'
   }
 });
+
+function toggleScheduled(val) {
+  document.getElementById('scheduled-at-group').style.display = val === 'scheduled' ? 'block' : 'none';
+  var dt = document.getElementById('published-at');
+  if (val === 'scheduled' && !dt.value) {
+    var d = new Date(Date.now() + 3600000);
+    dt.value = d.toISOString().slice(0,16);
+  }
+}
 
 function slugify(str) {
   return str.toLowerCase().trim().replace(/[^\w\s-]/g,'').replace(/[\s_-]+/g,'-').replace(/^-+|-+$/g,'');

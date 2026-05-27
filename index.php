@@ -67,6 +67,8 @@ if (str_starts_with($uri, '/admin')) {
         $p0 === 'blogs' && $p2 === 'posts'                             => (function() use ($p1) { $_GET['blog_id'] = (int)$p1; require BASE_PATH . '/admin/posts.php'; })(),
         $p0 === 'blogs' && $p2 === 'analytics'                        => (function() use ($p1) { $_GET['blog_id'] = (int)$p1; require BASE_PATH . '/admin/analytics.php'; })(),
         $p0 === 'blogs' && $p2 === 'federation'                       => (function() use ($p1) { $_GET['blog_id'] = (int)$p1; require BASE_PATH . '/admin/federation.php'; })(),
+        $p0 === 'blogs' && $p2 === 'export'                           => (function() use ($p1) { $_GET['blog_id'] = (int)$p1; require BASE_PATH . '/admin/export.php'; })(),
+        $p0 === 'blogs' && $p2 === 'import'                           => (function() use ($p1) { $_GET['blog_id'] = (int)$p1; require BASE_PATH . '/admin/import.php'; })(),
         $adminUri === '/media'                                         => require BASE_PATH . '/admin/media.php',
         $adminUri === '/tags'                                          => require BASE_PATH . '/admin/tags.php',
         $adminUri === '/settings'                                      => require BASE_PATH . '/admin/settings.php',
@@ -220,6 +222,30 @@ if (!$seg2) {
     );
     $pagination = pagination($total, $page, $perPage, blogUrl($blog));
     require $themePath . '/index.php';
+    exit;
+}
+
+// llms.txt — plain-text blog index for AI tools
+if ($seg2 === 'llms.txt') {
+    $posts = Database::fetchAll(
+        "SELECT title, slug, excerpt, content, published_at, created_at FROM posts WHERE blog_id = ? AND status = 'published' ORDER BY published_at DESC",
+        [$blog['id']]
+    );
+    header('Content-Type: text/plain; charset=utf-8');
+    echo '# ' . $blog['name'] . "\n\n";
+    if ($blog['description'] ?? $blog['tagline'] ?? '') {
+        echo '> ' . ($blog['description'] ?: $blog['tagline']) . "\n\n";
+    }
+    echo $blogUrl . "\n\n";
+    if ($posts) {
+        echo "## Posts\n\n";
+        foreach ($posts as $p) {
+            $summary = $p['excerpt'] ?: excerpt($p['content'] ?? '', 30);
+            echo '- [' . $p['title'] . '](' . blogUrl($blog, $p['slug']) . ')';
+            if ($summary) echo ': ' . strip_tags($summary);
+            echo "\n";
+        }
+    }
     exit;
 }
 

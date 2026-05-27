@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tagline     = trim($_POST['tagline'] ?? '');
     $theme       = $_POST['theme'] ?? 'minimal';
     $is_public   = isset($_POST['is_public']) ? 1 : 0;
+    $custom_css  = trim($_POST['custom_css'] ?? '');
 
     if (!$name) $errors[] = 'Blog name is required.';
     if (!$slug) $errors[] = 'Slug is required.';
@@ -39,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'tagline'     => $tagline,
                 'theme'       => $theme,
                 'is_public'   => $is_public,
+                'custom_css'  => $custom_css ?: null,
             ]);
             flash('success', 'Blog created! Start writing your first post.');
             redirect("/admin/blogs/{$newId}/posts/new");
@@ -50,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'tagline'     => $tagline,
                 'theme'       => $theme,
                 'is_public'   => $is_public,
+                'custom_css'  => $custom_css ?: null,
             ], 'id = ?', [$id]);
             flash('success', 'Blog settings saved.');
             redirect("/admin/blogs/{$id}/edit");
@@ -66,9 +69,11 @@ adminLayout($pageTitle, function() use ($blog, $isNew, $id, $themes, $errors) { 
 <div class="page-header">
   <h1><?= $isNew ? 'Create New Blog' : 'Blog Settings' ?></h1>
   <?php if (!$isNew): ?>
-  <div style="display:flex;gap:.5rem">
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
     <a href="/admin/blogs/<?= $id ?>/posts" class="btn">View Posts</a>
     <a href="/admin/blogs/<?= $id ?>/federation" class="btn">&#x1F300; Fediverse</a>
+    <a href="/admin/blogs/<?= $id ?>/export" class="btn">&#x2B07; Export</a>
+    <a href="/admin/blogs/<?= $id ?>/import" class="btn">&#x2B06; Import</a>
   </div>
   <?php endif; ?>
 </div>
@@ -119,6 +124,13 @@ adminLayout($pageTitle, function() use ($blog, $isNew, $id, $themes, $errors) { 
         <input type="checkbox" name="is_public" value="1" <?= ($blog['is_public'] ?? 1) ? 'checked' : '' ?>>
         Make this blog publicly visible
       </label>
+    </div>
+    <div class="form-group">
+      <label for="custom_css">Custom CSS <span class="optional">(optional)</span></label>
+      <textarea id="custom_css" name="custom_css" rows="6"
+                placeholder="/* Override theme styles for this blog only */&#10;.post-title { color: navy; }&#10;.site-header { background: #f0f0f0; }"
+                style="font-family:monospace;font-size:.85rem"><?= h($blog['custom_css'] ?? '') ?></textarea>
+      <small>Applied to every page of this blog on top of the chosen theme.</small>
     </div>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary"><?= $isNew ? 'Create Blog' : 'Save Settings' ?></button>

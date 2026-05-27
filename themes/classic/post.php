@@ -14,6 +14,7 @@
 <meta property="og:type" content="article">
 <?php if ($post['cover_image']): ?><meta property="og:image" content="<?= h($post['cover_image']) ?>"><?php endif; ?>
 <meta name="twitter:card" content="summary_large_image">
+<?php if ($blog['custom_css']): ?><style><?= $blog['custom_css'] ?></style><?php endif; ?>
 </head>
 <body>
 <header class="site-header">

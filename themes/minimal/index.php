@@ -7,6 +7,7 @@
 <meta name="description" content="<?= h($blog['description'] ?? $blog['tagline'] ?? '') ?>">
 <link rel="stylesheet" href="<?= h(themeAsset($blog, 'css/style.css')) ?>">
 <link rel="alternate" type="application/rss+xml" title="<?= h($blog['name']) ?>" href="<?= h($feedUrl) ?>">
+<?php if ($blog['custom_css']): ?><style><?= $blog['custom_css'] ?></style><?php endif; ?>
 </head>
 <body>
 <header class="site-header">
