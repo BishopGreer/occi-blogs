@@ -66,7 +66,10 @@ adminLayout($pageTitle, function() use ($blog, $isNew, $id, $themes, $errors) { 
 <div class="page-header">
   <h1><?= $isNew ? 'Create New Blog' : 'Blog Settings' ?></h1>
   <?php if (!$isNew): ?>
-  <a href="/admin/blogs/<?= $id ?>/posts" class="btn">View Posts</a>
+  <div style="display:flex;gap:.5rem">
+    <a href="/admin/blogs/<?= $id ?>/posts" class="btn">View Posts</a>
+    <a href="/admin/blogs/<?= $id ?>/federation" class="btn">&#x1F300; Fediverse</a>
+  </div>
   <?php endif; ?>
 </div>
 

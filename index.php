@@ -12,6 +12,8 @@ require BASE_PATH . '/core/helpers.php';
 require BASE_PATH . '/core/Media.php';
 require BASE_PATH . '/core/Updater.php';
 require BASE_PATH . '/core/Feed.php';
+require BASE_PATH . '/core/HttpSignature.php';
+require BASE_PATH . '/core/Federator.php';
 
 Auth::init();
 
@@ -64,6 +66,7 @@ if (str_starts_with($uri, '/admin')) {
         $p0 === 'blogs' && $p2 === 'posts' && is_numeric($p3) && (($parts[4] ?? '') === 'edit') => (function() use ($p1, $p3) { $_GET['blog_id'] = (int)$p1; $_GET['id'] = (int)$p3; require BASE_PATH . '/admin/post-edit.php'; })(),
         $p0 === 'blogs' && $p2 === 'posts'                             => (function() use ($p1) { $_GET['blog_id'] = (int)$p1; require BASE_PATH . '/admin/posts.php'; })(),
         $p0 === 'blogs' && $p2 === 'analytics'                        => (function() use ($p1) { $_GET['blog_id'] = (int)$p1; require BASE_PATH . '/admin/analytics.php'; })(),
+        $p0 === 'blogs' && $p2 === 'federation'                       => (function() use ($p1) { $_GET['blog_id'] = (int)$p1; require BASE_PATH . '/admin/federation.php'; })(),
         $adminUri === '/media'                                         => require BASE_PATH . '/admin/media.php',
         $adminUri === '/tags'                                          => require BASE_PATH . '/admin/tags.php',
         $adminUri === '/settings'                                      => require BASE_PATH . '/admin/settings.php',
@@ -84,6 +87,14 @@ if (str_starts_with($uri, '/api')) {
         $uri === '/api/media/upload' => require BASE_PATH . '/api/media.php',
         default => json(['error' => 'Not found'], 404),
     };
+    exit;
+}
+
+// -------------------------------------------------------
+// WebFinger
+// -------------------------------------------------------
+if ($uri === '/.well-known/webfinger') {
+    require BASE_PATH . '/api/webfinger.php';
     exit;
 }
 
@@ -141,6 +152,61 @@ $blogUrl  = blogUrl($blog);
 $feedUrl  = blogUrl($blog, 'feed');
 $themePath = BASE_PATH . '/themes/' . ($blog['theme'] ?? 'minimal');
 if (!is_dir($themePath)) $themePath = BASE_PATH . '/themes/minimal';
+
+// AP content negotiation — return actor JSON for /{slug} if client wants ActivityPub
+if (!$seg2 && $blog['ap_enabled']) {
+    $accept  = $_SERVER['HTTP_ACCEPT'] ?? '';
+    $wantsAP = str_contains($accept, 'application/activity+json')
+            || str_contains($accept, 'application/ld+json');
+    if ($wantsAP) {
+        header('Content-Type: application/activity+json; charset=utf-8');
+        echo json_encode(Federator::actorJson($blog), JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        exit;
+    }
+}
+
+// AP inbox
+if ($seg2 === 'inbox') {
+    $_GET['blog_slug'] = $seg1;
+    require BASE_PATH . '/api/inbox.php';
+    exit;
+}
+
+// AP outbox (read-only collection)
+if ($seg2 === 'outbox') {
+    if (!$blog['ap_enabled']) { http_response_code(404); require BASE_PATH . '/templates/404.php'; exit; }
+    $actorUrl  = Federator::actorUrl($blog);
+    $postCount = (int)Database::fetch("SELECT COUNT(*) as n FROM posts WHERE blog_id = ? AND status = 'published'", [$blog['id']])['n'];
+    header('Content-Type: application/activity+json; charset=utf-8');
+    echo json_encode([
+        '@context'   => 'https://www.w3.org/ns/activitystreams',
+        'id'         => $actorUrl . '/outbox',
+        'type'       => 'OrderedCollection',
+        'totalItems' => $postCount,
+        'first'      => $actorUrl . '/outbox?page=1',
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    exit;
+}
+
+// AP followers collection
+if ($seg2 === 'followers') {
+    if (!$blog['ap_enabled']) { http_response_code(404); require BASE_PATH . '/templates/404.php'; exit; }
+    $actorUrl = Federator::actorUrl($blog);
+    $count    = (int)Database::fetch("SELECT COUNT(*) as n FROM blog_followers WHERE blog_id = ?", [$blog['id']])['n'];
+    $items    = Database::fetchAll(
+        "SELECT ra.uri FROM blog_followers bf JOIN remote_actors ra ON bf.remote_actor_id = ra.id WHERE bf.blog_id = ? LIMIT 100",
+        [$blog['id']]
+    );
+    header('Content-Type: application/activity+json; charset=utf-8');
+    echo json_encode([
+        '@context'   => 'https://www.w3.org/ns/activitystreams',
+        'id'         => $actorUrl . '/followers',
+        'type'       => 'OrderedCollection',
+        'totalItems' => $count,
+        'orderedItems' => array_column($items, 'uri'),
+    ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    exit;
+}
 
 // Sub-routes
 if (!$seg2) {

@@ -12,8 +12,8 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_URI} ^/(themes|public)/
 RewriteRule ^ - [L]
 
-# Allow .well-known through
-RewriteCond %{REQUEST_URI} ^/\.well-known/
+# Allow Let's Encrypt ACME challenges through directly
+RewriteCond %{REQUEST_URI} ^/\.well-known/acme-challenge/
 RewriteRule ^ - [L]
 
 # Route ALL other requests through the front controller (including PHP files)
