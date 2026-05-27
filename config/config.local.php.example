@@ -1,0 +1,17 @@
+<?php
+// OCCI Blogs — Local Configuration
+// Copy this file to config.local.php and fill in your values.
+// NEVER commit config.local.php to version control.
+
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'occi_blogs');
+define('DB_USER', 'your_db_user');
+define('DB_PASS', 'your_db_password');
+define('DB_CHARSET', 'utf8mb4');
+
+define('BASE_PATH', '/var/web/blogs.myocci.net');
+
+// Uncomment to lock the site URL (useful for production):
+// define('SITE_URL', 'https://blogs.myocci.net');
+
+define('APP_ENV', 'production');
