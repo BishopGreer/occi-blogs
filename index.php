@@ -11,6 +11,7 @@ require BASE_PATH . '/core/Auth.php';
 require BASE_PATH . '/core/helpers.php';
 require BASE_PATH . '/core/Media.php';
 require BASE_PATH . '/core/Updater.php';
+require BASE_PATH . '/core/Feed.php';
 
 Auth::init();
 
@@ -156,26 +157,13 @@ if (!$seg2) {
     exit;
 }
 
+if ($seg2 === 'feed' && $seg3 === 'atom') {
+    Feed::atom($blog);
+    exit;
+}
+
 if ($seg2 === 'feed') {
-    if (file_exists(BASE_PATH . '/core/Feed.php')) {
-        require BASE_PATH . '/core/Feed.php';
-        Feed::rss($blog);
-    } else {
-        header('Content-Type: application/rss+xml; charset=utf-8');
-        $posts = Database::fetchAll("SELECT * FROM posts WHERE blog_id = ? AND status = 'published' ORDER BY published_at DESC LIMIT 20", [$blog['id']]);
-        echo '<?xml version="1.0" encoding="UTF-8"?>';
-        echo '<rss version="2.0"><channel>';
-        echo '<title>' . h($blog['name']) . '</title>';
-        echo '<link>' . h($blogUrl) . '</link>';
-        echo '<description>' . h($blog['description'] ?? '') . '</description>';
-        foreach ($posts as $p) {
-            echo '<item><title>' . h($p['title']) . '</title>';
-            echo '<link>' . h(blogUrl($blog, $p['slug'])) . '</link>';
-            echo '<pubDate>' . date('r', strtotime($p['published_at'] ?? $p['created_at'])) . '</pubDate>';
-            echo '<description><![CDATA[' . ($p['excerpt'] ?: excerpt($p['content'] ?? '')) . ']]></description></item>';
-        }
-        echo '</channel></rss>';
-    }
+    Feed::rss($blog);
     exit;
 }
 
@@ -192,11 +180,6 @@ if ($seg2 === 'tag' && $seg3) {
     $pagination = pagination($total, $page, $perPage, blogUrl($blog, 'tag/' . $seg3));
     require $themePath . '/tag.php';
     exit;
-}
-
-// Track analytics
-if (file_exists(BASE_PATH . '/core/Analytics.php')) {
-    require_once BASE_PATH . '/core/Analytics.php';
 }
 
 // Single post

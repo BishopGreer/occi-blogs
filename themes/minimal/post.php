@@ -58,8 +58,18 @@
     Share:
     <a href="https://twitter.com/intent/tweet?url=<?= urlencode(blogUrl($blog, $post['slug'])) ?>&text=<?= urlencode($post['title']) ?>" target="_blank" rel="noopener" style="color:#7c4dbd;margin-left:.75rem">Twitter / X</a>
     <a href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode(blogUrl($blog, $post['slug'])) ?>" target="_blank" rel="noopener" style="color:#7c4dbd;margin-left:.75rem">Facebook</a>
+    <a href="#" onclick="shareMastodon('<?= addslashes(blogUrl($blog, $post['slug'])) ?>','<?= addslashes(h($post['title'])) ?>');return false" style="color:#7c4dbd;margin-left:.75rem">Mastodon</a>
     <a href="#" onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Copied!';return false" style="color:#7c4dbd;margin-left:.75rem">Copy link</a>
   </div>
+<script>
+function shareMastodon(url, title) {
+  var instance = prompt('Your Mastodon instance (e.g. mastodon.social):');
+  if (instance) {
+    instance = instance.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+    window.open('https://' + instance + '/share?text=' + encodeURIComponent(title + ' ' + url), '_blank');
+  }
+}
+</script>
 
   <p style="margin-top:2rem;font-family:-apple-system,sans-serif;font-size:.9rem">
     <a href="<?= h($blogUrl) ?>" style="color:#7c4dbd">&larr; Back to <?= h($blog['name']) ?></a>

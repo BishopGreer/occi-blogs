@@ -7,6 +7,7 @@
 <meta name="description" content="<?= h($post['excerpt'] ?: excerpt($post['content'] ?? '', 30)) ?>">
 <link rel="canonical" href="<?= h(blogUrl($blog, $post['slug'])) ?>">
 <link rel="stylesheet" href="<?= h(themeAsset($blog, 'css/style.css')) ?>">
+<link rel="alternate" type="application/rss+xml" title="<?= h($blog['name']) ?>" href="<?= h($feedUrl) ?>">
 <meta property="og:title" content="<?= h($post['title']) ?>">
 <meta property="og:description" content="<?= h($post['excerpt'] ?: excerpt($post['content'] ?? '', 30)) ?>">
 <meta property="og:url" content="<?= h(blogUrl($blog, $post['slug'])) ?>">
@@ -46,8 +47,18 @@
       Share:
       <a href="https://twitter.com/intent/tweet?url=<?= urlencode(blogUrl($blog, $post['slug'])) ?>&text=<?= urlencode($post['title']) ?>" target="_blank" rel="noopener">Twitter / X</a>
       <a href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode(blogUrl($blog, $post['slug'])) ?>" target="_blank" rel="noopener">Facebook</a>
+      <a href="#" onclick="shareMastodon('<?= addslashes(blogUrl($blog, $post['slug'])) ?>','<?= addslashes(h($post['title'])) ?>');return false">Mastodon</a>
       <a href="#" onclick="navigator.clipboard.writeText(window.location.href);this.textContent='Copied!';return false">Copy link</a>
     </div>
+<script>
+function shareMastodon(url, title) {
+  var instance = prompt('Your Mastodon instance (e.g. mastodon.social):');
+  if (instance) {
+    instance = instance.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+    window.open('https://' + instance + '/share?text=' + encodeURIComponent(title + ' ' + url), '_blank');
+  }
+}
+</script>
 
     <p style="margin-top:1.5rem;font-family:-apple-system,sans-serif;font-size:.9rem">
       <a href="<?= h($blogUrl) ?>" style="color:#4a7c6f">&larr; Back to <?= h($blog['name']) ?></a>
