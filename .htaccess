@@ -4,18 +4,19 @@ Options -Indexes
 RewriteEngine On
 RewriteRule ^(core|config|scripts)(/|$) - [F,L]
 
-# Allow direct access to theme assets, public assets, and uploads
-RewriteCond %{REQUEST_URI} ^/themes/ [OR]
-RewriteCond %{REQUEST_URI} ^/public/
+# Pass static files through directly (images, css, js, fonts, etc.)
+RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|map)$ [NC]
+RewriteRule ^ - [L]
+
+# Pass themes and public directories through directly
+RewriteCond %{REQUEST_URI} ^/(themes|public)/
 RewriteRule ^ - [L]
 
 # Allow .well-known through
 RewriteCond %{REQUEST_URI} ^/\.well-known/
 RewriteRule ^ - [L]
 
-# Route everything else through front controller
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+# Route ALL other requests through the front controller (including PHP files)
 RewriteRule ^ index.php [L]
 
 # Security headers
