@@ -174,27 +174,31 @@ adminLayout($pageTitle, function() use ($blog, $blogId, $post, $postId, $isNew, 
   </div>
 </form>
 
-<!-- TinyMCE -->
-<script src="/public/tinymce/tinymce.min.js"></script>
+<!-- Jodit Editor (MIT, no API key required) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jodit/build/jodit.min.css">
+<script src="https://cdn.jsdelivr.net/npm/jodit/build/jodit.min.js"></script>
 <script>
-tinymce.init({
-  selector: '#content',
-  license_key: 'gpl',
-  height: 480,
-  menubar: false,
-  plugins: 'image link lists table code fullscreen wordcount autosave',
-  toolbar: 'undo redo | bold italic underline | bullist numlist | link image table | blockquote code | fullscreen',
-  content_style: 'body { font-family: Georgia, serif; font-size: 16px; line-height: 1.7; max-width: 720px; margin: 1rem auto; }',
-  images_upload_url: '/api/media/upload?blog_id=<?= $blogId ?>',
-  images_upload_credentials: true,
-  automatic_uploads: true,
-  file_picker_types: 'image',
-  relative_urls: false,
-  remove_script_host: false,
-  init_instance_callback: function(editor) {
-    editor.on('input keyup', function() {
-      document.getElementById('content').value = editor.getContent();
-    });
+const editor = Jodit.make('#content', {
+  height: 500,
+  toolbarButtonSize: 'middle',
+  buttons: 'bold,italic,underline,strikethrough,|,ul,ol,|,outdent,indent,|,font,fontsize,|,paragraph,|,image,video,link,table,|,align,|,undo,redo,|,hr,eraser,copyformat,|,fullsize,source',
+  uploader: {
+    url: '/api/media/upload?blog_id=<?= $blogId ?>',
+    withCredentials: true,
+    format: 'json',
+    process: function(resp) {
+      return {
+        files: [resp.location],
+        isImages: [true],
+        error: resp.error ? 1 : 0,
+        msg: resp.error || ''
+      };
+    }
+  },
+  style: {
+    fontFamily: 'Georgia, serif',
+    fontSize: '16px',
+    lineHeight: '1.75'
   }
 });
 
@@ -206,10 +210,10 @@ document.getElementById('slug').addEventListener('input', function() {
   document.getElementById('slug-preview').textContent = this.value;
 });
 
-// Sync TinyMCE content before form submit
+// Jodit syncs to the textarea automatically, but trigger a save just in case
 document.getElementById('post-form').addEventListener('submit', function() {
-  if (typeof tinymce !== 'undefined') {
-    tinymce.triggerSave();
+  if (typeof editor !== 'undefined') {
+    document.getElementById('content').value = editor.value;
   }
 });
 </script>

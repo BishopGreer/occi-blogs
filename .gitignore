@@ -6,9 +6,6 @@ config/install.lock
 public/uploads/*
 !public/uploads/.gitkeep
 
-# TinyMCE symlink (created at deploy time)
-public/tinymce
-
 # OS / IDE
 .DS_Store
 .idea/
