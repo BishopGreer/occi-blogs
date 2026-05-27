@@ -2,7 +2,7 @@ Options -Indexes
 
 # Block direct access to sensitive directories
 RewriteEngine On
-RewriteRule ^(core|config|install|scripts)(/|$) - [F,L]
+RewriteRule ^(core|config|scripts)(/|$) - [F,L]
 
 # Allow direct access to theme assets, public assets, and uploads
 RewriteCond %{REQUEST_URI} ^/themes/ [OR]
